@@ -9,11 +9,13 @@
  ***********************************************************************/
 import 'reflect-metadata';
 
+import { CollectMinikubeEventsHelper } from './collect-minikube-events-helper';
 import { Configuration } from './configuration';
 import { Container } from 'inversify';
 import { LaunchMinikube } from './launch-minikube';
 import { MinikubeSetupHelper } from './minikube-setup-helper';
 import { MinikubeStartHelper } from './minikube-start-helper';
+import { PostAction } from './post-action';
 
 export class InversifyBinding {
   private container: Container;
@@ -25,9 +27,11 @@ export class InversifyBinding {
 
     this.container.bind(MinikubeSetupHelper).toSelf().inSingletonScope();
     this.container.bind(MinikubeStartHelper).toSelf().inSingletonScope();
+    this.container.bind(CollectMinikubeEventsHelper).toSelf().inSingletonScope();
 
     this.container.bind(Configuration).toConstantValue(this.configuration);
     this.container.bind(LaunchMinikube).toSelf().inSingletonScope();
+    this.container.bind(PostAction).toSelf().inSingletonScope();
 
     return this.container;
   }

@@ -9,5 +9,6 @@
  ***********************************************************************/
 export const Configuration = Symbol.for('Configuration');
 export interface Configuration {
+  jobNameSuffix(): string;
   minikubeVersion(): string | undefined;
 }
