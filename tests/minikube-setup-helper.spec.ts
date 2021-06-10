@@ -11,6 +11,7 @@ import 'reflect-metadata';
 
 import * as core from '@actions/core';
 import * as execa from 'execa';
+import * as os from 'os';
 import * as toolCache from '@actions/tool-cache';
 
 import { Configuration } from '../src/configuration';
@@ -55,6 +56,11 @@ describe('Test MinikubeStartHelper', () => {
     const customMinikubeVersion = '1.2.3-custom-minikube';
     minikubeVersionMethod.mockReturnValue(customMinikubeVersion);
 
+    const osPlatformSpy = jest.spyOn(os, 'platform');
+    osPlatformSpy.mockReturnValue('linux');
+    const osArchSpy = jest.spyOn(os, 'arch');
+    osArchSpy.mockReturnValue('x64');
+
     const fakeDownloadedPath = '/fake/download-archive';
     const downloadToolSpy = jest.spyOn(toolCache, 'downloadTool');
     downloadToolSpy.mockResolvedValue(fakeDownloadedPath);
@@ -78,5 +84,29 @@ describe('Test MinikubeStartHelper', () => {
     expect((execa as any).mock.calls[1][0]).toBe('sudo');
     expect((execa as any).mock.calls[1][1][0]).toBe('-E');
     expect((execa as any).mock.calls[1][1][1]).toBe('mv');
+  });
+
+  test('start custom minikube on macos', async () => {
+    (execa as any).mockResolvedValue({ exitCode: 0, stdout: undefined });
+    const customMinikubeVersion = '1.2.3-custom-minikube';
+    minikubeVersionMethod.mockReturnValue(customMinikubeVersion);
+
+    const osPlatformSpy = jest.spyOn(os, 'platform');
+    osPlatformSpy.mockReturnValue('darwin');
+    const osArchSpy = jest.spyOn(os, 'arch');
+    osArchSpy.mockReturnValue('x64');
+
+    const fakeDownloadedPath = '/fake/download-archive';
+    const downloadToolSpy = jest.spyOn(toolCache, 'downloadTool');
+    downloadToolSpy.mockResolvedValue(fakeDownloadedPath);
+    await minikubeSetupHelper.setup();
+    // core.info
+    expect(core.info).toBeCalled();
+    expect((core.info as any).mock.calls[0][0]).toContain(`Downloading minikube ${customMinikubeVersion}...`);
+
+    expect(downloadToolSpy).toBeCalled();
+    expect(downloadToolSpy.mock.calls[0][0]).toBe(
+      'https://github.com/kubernetes/minikube/releases/download/1.2.3-custom-minikube/minikube-darwin-amd64'
+    );
   });
 });

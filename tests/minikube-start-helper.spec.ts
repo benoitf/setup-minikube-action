@@ -11,6 +11,7 @@ import 'reflect-metadata';
 
 import * as core from '@actions/core';
 import * as execa from 'execa';
+import * as os from 'os';
 
 import { Container } from 'inversify';
 import { MinikubeStartHelper } from '../src/minikube-start-helper';
@@ -35,10 +36,11 @@ describe('Test MinikubeStartHelper', () => {
     jest.resetAllMocks();
   });
 
-  test('start no stdout/stderr', async () => {
+  test('start no stdout/stderr on linux', async () => {
     const stdout = 'dummy output of start minikube';
-
     (execa as any).mockResolvedValue({ exitCode: 0, stdout });
+    const osPlatformSpy = jest.spyOn(os, 'platform');
+    osPlatformSpy.mockReturnValue('linux');
 
     await minikubeStartHelper.start();
     // core.info
@@ -47,6 +49,27 @@ describe('Test MinikubeStartHelper', () => {
 
     expect((execa as any).mock.calls[0][0]).toBe('minikube');
     expect((execa as any).mock.calls[0][1][0]).toBe('start');
+    expect((execa as any).mock.calls[0][1][1]).toBe('--vm-driver=docker');
+    expect((execa as any).mock.calls[0][1][4]).toBe('2');
+    expect((execa as any).mock.calls[0][1][6]).toBe('6500');
+  });
+
+  test('start no stdout/stderr on mac', async () => {
+    const stdout = 'dummy output of start minikube';
+    (execa as any).mockResolvedValue({ exitCode: 0, stdout });
+    const osPlatformSpy = jest.spyOn(os, 'platform');
+    osPlatformSpy.mockReturnValue('darwin');
+
+    await minikubeStartHelper.start();
+    // core.info
+    expect(core.info).toBeCalled();
+    expect((core.info as any).mock.calls[0][0]).toContain('Starting minikube...');
+
+    expect((execa as any).mock.calls[0][0]).toBe('minikube');
+    expect((execa as any).mock.calls[0][1][0]).toBe('start');
+    expect((execa as any).mock.calls[0][1][1]).toBe('--vm-driver=virtualbox');
+    expect((execa as any).mock.calls[0][1][4]).toBe('3');
+    expect((execa as any).mock.calls[0][1][6]).toBe('8192');
   });
 
   test('start with stdout/stderr', async () => {

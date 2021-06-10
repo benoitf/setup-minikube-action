@@ -10,6 +10,7 @@
 
 import * as core from '@actions/core';
 import * as execa from 'execa';
+import * as os from 'os';
 
 import { injectable } from 'inversify';
 
@@ -28,9 +29,20 @@ export class MinikubeStartHelper {
       },
     };
     core.info('Starting minikube...');
+
+    let cpus = '2';
+    let memory = '6500';
+    let vmDriver = 'docker';
+    // Github mac runners has more cpu and memory and a different driver than linux one
+    if (os.platform() === 'darwin') {
+      cpus = '3';
+      memory = '8192';
+      vmDriver = 'virtualbox';
+    }
+
     const execaProcess = execa(
       'minikube',
-      ['start', '--vm-driver=docker', '--addons=ingress', '--cpus', '2', '--memory', '6500'],
+      ['start', `--vm-driver=${vmDriver}`, '--addons=ingress', '--cpus', cpus, '--memory', memory],
       options
     );
     if (execaProcess.stdout) {
